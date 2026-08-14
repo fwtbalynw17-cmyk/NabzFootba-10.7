@@ -16,58 +16,49 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check ZIP file
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ ! -f "NabzFootball.zip" ]; then
-            echo "ERROR: NabzFootball.zip not found in repository root."
-            echo "Files in repository:"
-            find . -maxdepth 2 -type f | sort
-            exit 1
-          fi
-
-          echo "ZIP file found:"
-          ls -lh NabzFootball.zip
-
       - name: Extract project ZIP
         shell: bash
         run: |
           set -euo pipefail
 
+          ZIP_FILE="NabzFootball-Android-Project.zip"
+
+          echo "Checking ZIP file..."
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ERROR: $ZIP_FILE not found!"
+            echo "Files in repository:"
+            find . -maxdepth 2 -type f | sort
+            exit 1
+          fi
+
+          echo "ZIP found:"
+          ls -lh "$ZIP_FILE"
+
           rm -rf /tmp/nabz-project
           mkdir -p /tmp/nabz-project
 
-          unzip -q NabzFootball.zip -d /tmp/nabz-project
+          echo "Extracting ZIP..."
+          unzip -q "$ZIP_FILE" -d /tmp/nabz-project
 
           echo "Extracted files:"
-          find /tmp/nabz-project -maxdepth 3 -type f | sort
+          find /tmp/nabz-project -maxdepth 4 -type f | sort
 
-          if [ -d "/tmp/nabz-project/NabzFootball" ]; then
-            echo "NabzFootball folder found."
+          PROJECT_DIR=$(find /tmp/nabz-project -type d -name "NabzFootball" -print -quit || true)
 
-            cp -a /tmp/nabz-project/NabzFootball/. .
-
+          if [ -n "$PROJECT_DIR" ]; then
+            echo "Project found at: $PROJECT_DIR"
+            cp -a "$PROJECT_DIR"/. .
           else
             echo "NabzFootball folder not found."
-            echo "Checking extracted structure..."
-
-            FIRST_DIR=$(find /tmp/nabz-project -mindepth 1 -maxdepth 1 -type d | head -n 1 || true)
-
-            if [ -n "$FIRST_DIR" ]; then
-              echo "Using extracted folder: $FIRST_DIR"
-              cp -a "$FIRST_DIR"/. .
-            else
-              echo "ZIP contains files directly."
-              cp -a /tmp/nabz-project/. .
-            fi
+            echo "Copying extracted files directly..."
+            cp -a /tmp/nabz-project/. .
           fi
 
-          rm -f NabzFootball.zip
+          rm -f "$ZIP_FILE"
 
-          echo "Project files in repository:"
-          find . -maxdepth 2 -type f | sort | head -200
+          echo "Final project structure:"
+          find . -maxdepth 3 -type f | sort
 
       - name: Commit extracted project
         shell: bash
@@ -81,8 +72,7 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
-            exit 0
+          else
+            git commit -m "Extract Nabz Football Android project"
+            git push
           fi
-
-          git commit -m "Extract Nabz Football Android project"
-          git push
