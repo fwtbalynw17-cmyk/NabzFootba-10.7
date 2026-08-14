@@ -89,4 +89,4 @@ jobs:
           # compute branch name from GITHUB_REF (refs/heads/<branch>)
           BRANCH="${GITHUB_REF#refs/heads/}"
           echo "Pushing to branch: $BRANCH"
-          git push origin "HEAD:$BRANCH
+          git push origin "HEAD:$BRANCH"
